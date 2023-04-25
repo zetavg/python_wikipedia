@@ -17,7 +17,7 @@ RATE_LIMIT = False
 RATE_LIMIT_MIN_WAIT = None
 RATE_LIMIT_LAST_CALL = None
 USER_AGENT = 'wikipedia (https://github.com/goldsmith/Wikipedia/)'
-
+ADDITIONAL_PARAMS = {}
 
 def set_lang(prefix):
   '''
@@ -30,6 +30,13 @@ def set_lang(prefix):
   '''
   global API_URL
   API_URL = 'http://' + prefix.lower() + '.wikipedia.org/w/api.php'
+
+  # Handle zh-tw, zh-cn, ...
+  global ADDITIONAL_PARAMS
+  if '-' in prefix:
+    ADDITIONAL_PARAMS = {'variant': prefix}
+  else:
+    ADDITIONAL_PARAMS = {}
 
   for cached_func in (search, suggest, summary):
     cached_func.clear_cache()
@@ -735,7 +742,7 @@ def _wiki_request(params):
     wait_time = (RATE_LIMIT_LAST_CALL + RATE_LIMIT_MIN_WAIT) - datetime.now()
     time.sleep(int(wait_time.total_seconds()))
 
-  r = requests.get(API_URL, params=params, headers=headers)
+  r = requests.get(API_URL, params={**params, **ADDITIONAL_PARAMS}, headers=headers)
 
   if RATE_LIMIT:
     RATE_LIMIT_LAST_CALL = datetime.now()
